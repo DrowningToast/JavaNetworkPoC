@@ -1,40 +1,86 @@
 package Network.HTTP;
 
-import Network.HTTP.Base.HttpController;
+import Network.HTTP.Base.HttpRequestEventHandler;
+import Network.HTTP.Base.HttpThreadManager;
 import Network.HTTP.Base.HttpResponse;
 
-import java.io.IOException;
 import java.net.URL;
 
-public class HttpClient extends HttpController {
-
-    private final String httpURLPath = "https://tnjylm3on5.execute-api.ap-southeast-1.amazonaws.com";
+public class HttpClient extends HttpThreadManager {
 
     public HttpClient() {
-        System.out.println(this.httpURLPath);
-        super.httpUrl = this.httpURLPath;
+        super("http://localhost:5000");
     }
 
-    public HttpResponse getPing() {
-        try {
-            HttpResponse response = super.httpGET(new URL(httpURLPath + "/ping"));
-            System.out.println(response.getBody());
-            return response;
-        } catch (IOException e) {
-            System.out.println("FUCK");
-            e.printStackTrace();
-        }
-        System.out.println("FUCKO FF");
-        return null;
+    /**
+     * เป็น attribute ที่เอาไว้กับ response ที่อยากจะเก็บเฉยๆ
+     */
+    private HttpResponse bufferedResponse;
+
+    /**
+     * อย่า getBufferedResponse หลังจากทำ Request ทันทีเพราะว่า Request อาจจะยังไม่เสร็จเนื่องจากรันอยู่อีก Thread
+     *
+     * @return
+     */
+    public HttpResponse getBufferedResponse() {
+        return bufferedResponse;
     }
 
-    public HttpResponse getVerbose() {
-        try {
-            HttpResponse response = super.httpGET(new URL(httpURLPath + "/verbose"));
-            return response;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
+    /**
+     * CUSTOM REQUEST METHODS:
+     * <p>
+     * เขียนโดยการเรียกใช้ method makeRequest() แล้วใส่เงื่อนไขและ Event ต่างๆ ลงไปดังตัวอย่าง
+     * นอกจากนี้ยังมี method httpGET กับ httpPOST ของ parent class ที่สามารถเรียกใช้ได้
+     * <p>
+     * การหลีกเลี่ยงการใช้งาน htppGET กับ httpPOST เองโดยตรงไม่ผ่าน makeRequest จะป้องกันการ block main thread
+     */
+
+    public HttpClient getHelloWorld() {
+        makeRequest(new HttpRequestEventHandler() {
+            @Override
+            public HttpResponse executeRequest(URL url) throws Exception {
+                HttpResponse response = httpGET(new URL(url + "/"));
+                return response;
+            }
+
+            @Override
+            public void onSuccess(HttpResponse response) {
+                bufferedResponse = response;
+            }
+
+            @Override
+            public void onFail(Exception e) {
+
+            }
+        });
+        return this;
     }
+
+    public HttpClient getPing() {
+
+        makeRequest(new HttpRequestEventHandler() {
+            @Override
+            public HttpResponse executeRequest(URL url) throws Exception {
+                HttpResponse response = httpGET(new URL(url + "/ping"));
+                return response;
+            }
+
+            @Override
+            public void onSuccess(HttpResponse response) {
+                bufferedResponse = response;
+            }
+
+            @Override
+            public void onFail(Exception e) {
+                System.out.println(e.toString());
+                e.printStackTrace();
+            }
+        });
+
+        return this;
+    }
+
+    /**
+     * YOUR ROUTES HERE
+     */
 }

@@ -1,5 +1,7 @@
 package Network.HTTP.Base;
 
+import JSON.JSON;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -8,7 +10,7 @@ import java.util.HashMap;
 public class HttpResponse {
     private String value;
 
-    public String getBody() {
+    public String getRawBody() {
         return value;
     }
 
@@ -30,7 +32,7 @@ public class HttpResponse {
     }
 
     public HashMap getMap() {
-        HashMap hashMap = HttpController.parseJSONtoHashMap(value);
+        HashMap hashMap = JSON.parseJSONtoHashMap(value);
         return hashMap;
     }
 }
